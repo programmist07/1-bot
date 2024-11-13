@@ -1,10 +1,10 @@
 import datetime
 import json
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 
-async def save_user_data(user_id, username, name, text):
+async def save_user_data(user_id, username, name, text, phone=None):
     data_file = "users.json"
     try:
         with open(data_file, "r") as file:
@@ -18,6 +18,7 @@ async def save_user_data(user_id, username, name, text):
         "name": name,
         "time": time,
         "text": text,
+        "phone": phone,
     }
 
     if str(user_id) not in users_data:
@@ -32,9 +33,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         ["ID", "Name"],
         ["Username", "About"],
+        [KeyboardButton("Telefon raqamni yuborish", request_contact=True)],
     ]
     reply_markup = ReplyKeyboardMarkup(buttons, one_time_keyboard=False, resize_keyboard=True)
-    await update.message.reply_text("Welcome", reply_markup=reply_markup)
+    await update.message.reply_text("Xush kelibsiz! Kerakli bo'limni tanlang yoki telefon raqamingizni yuboring.", reply_markup=reply_markup)
 
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -60,12 +62,15 @@ async def username(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Siz username o'rnatmagansiz.")
 
 
-async def unknown_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_sticker("https://telegrambots.github.io/book/docs/sticker-fred.webp")
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    contact = update.message.contact
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    name = update.message.from_user.first_name
+    phone = contact.phone_number
 
-
-async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_sticker("https://telegrambots.github.io/book/docs/sticker-fred.webp")
+    await save_user_data(user_id, username, name, "Telefon raqami yuborildi", phone)
+    await update.message.reply_text(f"Raqamingiz muvaffaqiyatli qabul qilindi: {phone}")
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,6 +90,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_animation("https://telegrambots.github.io/book/docs/sticker-fred.webp")
 
 
+async def unknown_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("https://telegrambots.github.io/book/docs/sticker-fred.webp")
+
+
 def main():
     try:
         TOKEN = "7882866607:AAFNsxQboxn4GfoyP0IFX2xGt245k04c7x4"
@@ -95,10 +104,10 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("about", about))
         application.add_handler(MessageHandler(filters.TEXT, button_handler))
-        application.add_handler(MessageHandler(filters.VOICE, voice_handler))  
+        application.add_handler(MessageHandler(filters.CONTACT, handle_contact))
         application.add_handler(MessageHandler(filters.ALL, unknown_message))
 
-        application.run_polling()
+        application.run_polling(timeout=60, read_timeout=60)
 
 
 if __name__ == "__main__":
