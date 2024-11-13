@@ -87,7 +87,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     try:
-        TOKEN = "7882866607:AAFNsxQboxn4GfoyP0IFX2xGt245k04c7x4"
+        TOKEN = "TOKEN HERE"
         application = Application.builder().token(TOKEN).build()
     except Exception as e:
         print(f"Xatooo\n\n{e}")
