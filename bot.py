@@ -7,14 +7,11 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 async def save_user_data(user_id, username, name, text):
     data_file = "users.json"
     try:
-        # Load existing data
         with open(data_file, "r") as file:
             users_data = json.load(file)
     except FileNotFoundError:
-        # If file doesn't exist, initialize an empty dictionary
         users_data = {}
 
-    # Prepare the current time and new data entry
     time = datetime.datetime.now().strftime("%c")
     new_entry = {
         "username": username,
@@ -23,20 +20,15 @@ async def save_user_data(user_id, username, name, text):
         "text": text,
     }
 
-    # Append the new entry under the user's ID (as a list of records per user)
     if str(user_id) not in users_data:
         users_data[str(user_id)] = []
     users_data[str(user_id)].append(new_entry)
 
-    # Save the updated data back to the file
     with open(data_file, "w") as file:
         json.dump(users_data, file, indent=4)
 
 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.message.from_user
-
     buttons = [
         ["ID", "Name"],
         ["Username", "About"],
@@ -44,17 +36,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(buttons, one_time_keyboard=False, resize_keyboard=True)
     await update.message.reply_text("Welcome", reply_markup=reply_markup)
 
+
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bu bot foydalanuvchi haqida ma'lumot beradi va turli xil funksiyalarni bajaradi.")
+
 
 async def user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     await update.message.reply_text(f"Sizning ID: {user_id}")
 
+
 async def name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     first_name = update.message.from_user.first_name
     last_name = update.message.from_user.last_name or ""
     await update.message.reply_text(f"Sizning ism: {first_name} {last_name}".strip())
+
 
 async def username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.from_user.username
@@ -65,6 +61,10 @@ async def username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def unknown_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_sticker("https://telegrambots.github.io/book/docs/sticker-fred.webp")
+
+
+async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_sticker("https://telegrambots.github.io/book/docs/sticker-fred.webp")
 
 
@@ -87,7 +87,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     try:
-        TOKEN = "TOKEN HERE"
+        TOKEN = "7882866607:AAFNsxQboxn4GfoyP0IFX2xGt245k04c7x4"
         application = Application.builder().token(TOKEN).build()
     except Exception as e:
         print(f"Xatooo\n\n{e}")
@@ -95,8 +95,11 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("about", about))
         application.add_handler(MessageHandler(filters.TEXT, button_handler))
+        application.add_handler(MessageHandler(filters.VOICE, voice_handler))  
+        application.add_handler(MessageHandler(filters.ALL, unknown_message))
 
         application.run_polling()
+
 
 if __name__ == "__main__":
     main()
